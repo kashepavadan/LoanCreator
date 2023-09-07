@@ -18,6 +18,7 @@ contract LoanCreator {
     event RepayEvent(uint256 time, uint256 value, uint256 newValue, address borrower);
     event LoanRequestEvent(uint256 creationTime, uint8 interest, uint256 term, uint256 value, address borrower);
     event LiquidationEvent(uint256 time, uint256 value, address borrower);
+    event LoanRequestDeleteEvent(uint256 time, address borrower);
 
     struct Loan {
         uint8 interest;
@@ -73,6 +74,8 @@ contract LoanCreator {
         require(loanRequests[msg.sender].value != 0, "You have no loan request to remove.");
 
         delete loanRequests[msg.sender];
+
+        emit LoanRequestDeleteEvent(block.timestamp, msg.sender);
     }
 
     /// @notice Creates a loan request
@@ -107,6 +110,7 @@ contract LoanCreator {
         require(success, "Borrow failed!");
 
         emit BorrowEvent(block.timestamp, loans[key].time, loans[key].interest, loans[key].value, _borrower, msg.sender);
+        emit LoanRequestDeleteEvent(block.timestamp, _borrower);
 
         return key;
     }
@@ -128,6 +132,8 @@ contract LoanCreator {
 
             (bool success, ) = guarantor.call{value:(finalValue + interestValue - loanPartPrincipal)}("");
             require(success, "Transfer to guarantor failed!");
+
+            emit LiquidationEvent(block.timestamp, loanValue, address(uint160(_loanKey % addressLength)));
         } else {
             loanPartPrincipal = _getLoanPartPrincipal(msg.value, interestValue, loanValue);
             loans[_loanKey].value -= loanPartPrincipal;
