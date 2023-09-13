@@ -2,8 +2,6 @@
 pragma solidity ^0.8.21;
 
 import "https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
-
 
 /// @title A simple loan platform
 /// @author Daniel Kashepava
@@ -14,11 +12,11 @@ contract LoanCreator {
     // Length of a base-10 Ethereum address, for key generation
     uint256 constant addressLength = 10**49;
 
-    event BorrowEvent(uint256 creationTime, uint256 expirationTime, uint256 interest, uint256 value, address borrower, address guarantor);
-    event RepayEvent(uint256 time, uint256 value, uint256 newValue, address borrower);
-    event LoanRequestEvent(uint256 creationTime, uint8 interest, uint256 term, uint256 value, address borrower);
-    event LiquidationEvent(uint256 time, uint256 value, address borrower);
-    event LoanRequestDeleteEvent(uint256 time, address borrower);
+    event BorrowEvent(uint256 creationTime, uint256 indexed expirationTime, uint256 interest, uint256 value, address indexed borrower, uint256 indexed loanKey);
+    event RepayEvent(uint256 time, uint256 value, uint256 newValue, address indexed borrower, uint256 indexed loanKey);
+    event LoanRequestEvent(uint256 creationTime, uint8 interest, uint256 term, uint256 value, address indexed borrower);
+    event LiquidationEvent(uint256 time, uint256 value, address indexed borrower, uint256 indexed loanKey);
+    event LoanRequestDeleteEvent(uint256 time, address indexed borrower);
 
     struct Loan {
         uint8 interest;
@@ -109,7 +107,7 @@ contract LoanCreator {
         (bool success, ) = _borrower.call{value:loans[key].value}("");
         require(success, "Borrow failed!");
 
-        emit BorrowEvent(block.timestamp, loans[key].time, loans[key].interest, loans[key].value, _borrower, msg.sender);
+        emit BorrowEvent(block.timestamp, loans[key].time, loans[key].interest, loans[key].value, _borrower, key);
         emit LoanRequestDeleteEvent(block.timestamp, _borrower);
 
         return key;
@@ -133,7 +131,7 @@ contract LoanCreator {
             (bool success, ) = guarantor.call{value:(finalValue + interestValue - loanPartPrincipal)}("");
             require(success, "Transfer to guarantor failed!");
 
-            emit LiquidationEvent(block.timestamp, loanValue, address(uint160(_loanKey % addressLength)));
+            emit LiquidationEvent(block.timestamp, loanValue, address(uint160(_loanKey % addressLength)), _loanKey);
         } else {
             loanPartPrincipal = _getLoanPartPrincipal(msg.value, interestValue, loanValue);
             loans[_loanKey].value -= loanPartPrincipal;
@@ -143,7 +141,7 @@ contract LoanCreator {
         }
         credit[msg.sender] += int256(msg.value);
 
-        emit RepayEvent(block.timestamp, msg.value, loanValue -= loanPartPrincipal, msg.sender);
+        emit RepayEvent(block.timestamp, msg.value, loanValue -= loanPartPrincipal, msg.sender, _loanKey);
     }
 
     /// @notice Liquidates value of loan and gives reward to liquidator
@@ -160,6 +158,6 @@ contract LoanCreator {
         (bool success, ) = msg.sender.call{value:finalInterest}("");
         require(success, "Compensation failed!");
 
-        emit LiquidationEvent(block.timestamp, loanValue, debtorAddress);
+        emit LiquidationEvent(block.timestamp, loanValue, debtorAddress, _loanKey);
     }
 }

@@ -1,6 +1,6 @@
 # LoanCreator
 ## Overview
-A simple loan protocol for Ether with collateral submitted by a third-party "guarantor". It is deployed to the Sepolia Testnet here: [0xf12bda98a38fe4e4d383717a3e8e6acdf40690db](https://sepolia.etherscan.io/address/0xf12bda98a38fe4e4d383717a3e8e6acdf40690db).
+A simple loan protocol for Ether with collateral submitted by a third-party "guarantor". It is deployed to the Sepolia Testnet here: [0x90Ebfccef2AB1f8418e12455dB60a22E8C90281f](https://sepolia.etherscan.io/address/0x90ebfccef2ab1f8418e12455db60a22e8c90281f).
 
 ## How to Use
 ### Direct smart contract interaction
